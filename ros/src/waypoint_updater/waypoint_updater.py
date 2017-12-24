@@ -10,14 +10,8 @@ from std_msgs.msg import Int32, Float32
 from geometry_msgs.msg import PoseStamped
 from styx_msgs.msg import Lane, Waypoint
 
-
-
-
 '''
 This node will publish waypoints from the car's current position to some `x` distance ahead.
-
-As mentioned in the doc, you should ideally first implement a version which does not care
-about traffic lights or obstacles.
 
 Once you have created dbw_node, you will update this node to use the status of traffic lights too.
 
@@ -28,43 +22,32 @@ as well as to verify your TL classifier.
 '''
 
 LOOKAHEAD_WPS = 200 # Number of waypoints we will publish. You can change this number
-DECEL_RATE = 3.0	# Deceleration rate.
-
 
 
 class WaypointUpdater(object):
     def __init__(self):
         rospy.init_node('waypoint_updater')
 		
-		'''  From the rostopic list, these are what are available:
-		/base_waypoints, 		styx_msgs/Lane				Used
-		/current_pose			geometry_msgs/PoseStamped	Used
-		/current_velocity  		geometry_msgs/TwistStamped  Used
-		/final_waypoints   		styx_msgs/Lane
-		/image_color			styx_msgs/Lane
-		/rosout					styx_msgs/Lane
-		/rosout_agg				styx_msgs/Lane
-		/tf						tf/tfMessage
-		/traffic_waypoint		styx_msgs/Lane				Used
-		/twist_cmd				geometry_msgs/TwistStamped
-		/vehicle/brake_cmd		dbw_mkz_msgs/BrakeCmd
-		/vehicle/steering_cmd	dbw_mkz_msgs/SteeringCmd
-		/vehicle/throttle_cmd	dbw_mkz_msgs/ThrottleCmd
-		/vehicle/traffic_lights	styx_msgs/TrafficLightArray
-		'''
-		
-		# Subscribers in rospy
-		rospy.Subscriber('/base_waypoints', 	Lane, 			self.waypoints_cb)
-		rospy.Subscriber('/current_pose',   	PoseStamped,	self.pose_cb)  
+		#Available rostopic list (unused subscriptions commented out)
+		rospy.Subscriber('/base_waypoints', 	Lane, 			self.base_waypoints_cb)
+		rospy.Subscriber('/current_pose',   	PoseStamped,	self.current_pose_cb)  
 		rospy.Subscriber('/current_velocity', 	TwistStamped,	self.current_velocity_cb)
-        
-
-        # Subscriber for /traffic_waypoint and /obstacle_waypoint
-		rospy.Subscriber('/traffic_waypoint', 	Int32, 	self.traffic_cb)
+		#rospy.Subscriber('/image_color', 		Lane,			'''needs self.something''')
+		#rospy.Subscriber('/rosout'				Lane,			'''needs self.something''')
+		#rospy.Subscriber('/rosout_agg, 		Lane,			'''needs self.something''')
+		#rospy.Subscriber('/tf					tfMessage,		'''needs self.something''')
+		rospy.Subscriber('/traffic_waypoint', 	Int32, 			self.traffic_waypoint_cb)
+		#rospy.Subscriber('/twist_cmd, 			TwistStamped,	'''needs self.something''')
+		
+		#I'm not sure yet how to get the vehicle subscriber working ...
+		#rospy.Subscriber('/vehicle/brake_cmd,		dbw_mkz_msgs/BrakeCmd,		'''needs self.something''')
+		#rospy.Subscriber('/vehicle/steering_cmd,	dbw_mkz_msgs/SteeringCmd,	'''needs self.something''')
+		#rospy.Subscriber('/vehicle/throttle_cmd,	dbw_mkz_msgs/ThrottleCmd,	'''needs self.something''')
+		#rospy.Subscriber('/vehicle/traffic_lights,	TrafficLightArray,'''needs self.something''')
 		
 		#Matthew Younkins: I've commented out the line below because
-		#I don't know where this waypoint is coming from yet
-		#rospy.Subscriber('/obstacle_waypoint', 	Int32,	self.obstacle_cb)  #ok
+		#I don't know where this is coming from yet
+		#rospy.Subscriber('/obstacle_waypoint', 	Int32,	self.obstacle_waypoint_cb)  #ok
 		
         self.final_waypoints_pub = rospy.Publisher('final_waypoints', Lane, queue_size=1)  
 
@@ -72,22 +55,21 @@ class WaypointUpdater(object):
 
         rospy.spin()
 
-    def pose_cb(self, msg):
-        # TODO: Implement
-        pass
+    def current_pose_cb(self, msg):
+        self.current_pose = msg.pose
+        
+	def current_velocity_cb(self, msg):
+		self.current_velocity = msg.twist.linear.x
 
-    def waypoints_cb(self, waypoints):
-        # TODO: Implement
-        pass
-
-    def traffic_cb(self, msg):
-        # TODO: Callback for /traffic_waypoint message. Implement
-        pass
+    def base_waypoints_cb(self, waypoints):
+        self.base_waypoint = msg.data
+        
+    def traffic_waypoint_cb(self, msg):   #I believe this is actually the red lights
+        self.traffic_waypoint = msg.data
 
     def obstacle_cb(self, msg):
-        # TODO: Callback for /obstacle_waypoint message. We will implement it later
-        pass
-
+        self.obstacle_waypoint = None
+        
     def get_waypoint_velocity(self, waypoint):
         return waypoint.twist.twist.linear.x
 
