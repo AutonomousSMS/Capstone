@@ -28,27 +28,27 @@ class WaypointUpdater(object):
     def __init__(self):
         rospy.init_node('waypoint_updater')
 		
-		#Available rostopic list (unused subscriptions commented out)
-		rospy.Subscriber('/base_waypoints', 	Lane, 			self.base_waypoints_cb)
-		rospy.Subscriber('/current_pose',   	PoseStamped,	self.current_pose_cb)  
-		rospy.Subscriber('/current_velocity', 	TwistStamped,	self.current_velocity_cb)
-		#rospy.Subscriber('/image_color', 		Lane,			'''needs self.something''')
-		#rospy.Subscriber('/rosout'				Lane,			'''needs self.something''')
-		#rospy.Subscriber('/rosout_agg, 		Lane,			'''needs self.something''')
-		#rospy.Subscriber('/tf					tfMessage,		'''needs self.something''')
-		rospy.Subscriber('/traffic_waypoint', 	Int32, 			self.traffic_waypoint_cb)
-		#rospy.Subscriber('/twist_cmd, 			TwistStamped,	'''needs self.something''')
+	#Available rostopic list (unused subscriptions commented out)
+	rospy.Subscriber('/base_waypoints', 	Lane, 		self.base_waypoints_cb)
+	rospy.Subscriber('/current_pose',   	PoseStamped,	self.current_pose_cb)  
+	rospy.Subscriber('/current_velocity', 	TwistStamped,	self.current_velocity_cb)
+	#rospy.Subscriber('/image_color', 	Lane,		'''needs self.something''')
+	#rospy.Subscriber('/rosout'		Lane,		'''needs self.something''')
+	#rospy.Subscriber('/rosout_agg, 	Lane,		'''needs self.something''')
+	#rospy.Subscriber('/tf			tfMessage,	'''needs self.something''')
+	rospy.Subscriber('/traffic_waypoint', 	Int32, 		self.traffic_waypoint_cb)
+	#rospy.Subscriber('/twist_cmd, 		TwistStamped,	'''needs self.something''')
 		
-		#I'm not sure yet how to get the vehicle subscriber working ...
-		#rospy.Subscriber('/vehicle/brake_cmd,		dbw_mkz_msgs/BrakeCmd,		'''needs self.something''')
-		#rospy.Subscriber('/vehicle/steering_cmd,	dbw_mkz_msgs/SteeringCmd,	'''needs self.something''')
-		#rospy.Subscriber('/vehicle/throttle_cmd,	dbw_mkz_msgs/ThrottleCmd,	'''needs self.something''')
-		#rospy.Subscriber('/vehicle/traffic_lights,	TrafficLightArray,'''needs self.something''')
-		
-		#Matthew Younkins: I've commented out the line below because
-		#I don't know where this is coming from yet
-		#rospy.Subscriber('/obstacle_waypoint', 	Int32,	self.obstacle_waypoint_cb)  #ok
-		
+	#I'm not sure yet how to get the vehicle subscriber working ...
+	#rospy.Subscriber('/vehicle/brake_cmd,		dbw_mkz_msgs/BrakeCmd,		'''needs self.something''')
+	#rospy.Subscriber('/vehicle/steering_cmd,	dbw_mkz_msgs/SteeringCmd,	'''needs self.something''')
+	#rospy.Subscriber('/vehicle/throttle_cmd,	dbw_mkz_msgs/ThrottleCmd,	'''needs self.something''')
+	#rospy.Subscriber('/vehicle/traffic_lights,	TrafficLightArray,'''needs self.something''')
+	
+	#Matthew Younkins: I've commented out the line below because
+	#I don't know where this is coming from yet
+	#rospy.Subscriber('/obstacle_waypoint', 	Int32,	self.obstacle_waypoint_cb)  #ok
+	
         self.final_waypoints_pub = rospy.Publisher('final_waypoints', Lane, queue_size=1)  
 
         # Other member variables 
