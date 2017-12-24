@@ -1,10 +1,17 @@
 #!/usr/bin/env python
 
 import rospy
+import os
+import tf
+import numpy as np
+import time
+import math
+from std_msgs.msg import Int32, Float32
 from geometry_msgs.msg import PoseStamped
 from styx_msgs.msg import Lane, Waypoint
 
-import math
+
+
 
 '''
 This node will publish waypoints from the car's current position to some `x` distance ahead.
@@ -18,25 +25,50 @@ Please note that our simulator also provides the exact location of traffic light
 current status in `/vehicle/traffic_lights` message. You can use this message to build this node
 as well as to verify your TL classifier.
 
-TODO (for Yousuf and Aaron): Stopline location for each traffic light.
 '''
 
 LOOKAHEAD_WPS = 200 # Number of waypoints we will publish. You can change this number
+DECEL_RATE = 3.0	# Deceleration rate.
+
 
 
 class WaypointUpdater(object):
     def __init__(self):
         rospy.init_node('waypoint_updater')
+		
+		'''  From the rostopic list, these are what are available:
+		/base_waypoints, 		styx_msgs/Lane				Used
+		/current_pose			geometry_msgs/PoseStamped	Used
+		/current_velocity  		geometry_msgs/TwistStamped  Used
+		/final_waypoints   		styx_msgs/Lane
+		/image_color			styx_msgs/Lane
+		/rosout					styx_msgs/Lane
+		/rosout_agg				styx_msgs/Lane
+		/tf						tf/tfMessage
+		/traffic_waypoint		styx_msgs/Lane				Used
+		/twist_cmd				geometry_msgs/TwistStamped
+		/vehicle/brake_cmd		dbw_mkz_msgs/BrakeCmd
+		/vehicle/steering_cmd	dbw_mkz_msgs/SteeringCmd
+		/vehicle/throttle_cmd	dbw_mkz_msgs/ThrottleCmd
+		/vehicle/traffic_lights	styx_msgs/TrafficLightArray
+		'''
+		
+		# Subscribers in rospy
+		rospy.Subscriber('/base_waypoints', 	Lane, 			self.waypoints_cb)
+		rospy.Subscriber('/current_pose',   	PoseStamped,	self.pose_cb)  
+		rospy.Subscriber('/current_velocity', 	TwistStamped,	self.current_velocity_cb)
+        
 
-        rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb)
-        rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
+        # Subscriber for /traffic_waypoint and /obstacle_waypoint
+		rospy.Subscriber('/traffic_waypoint', 	Int32, 	self.traffic_cb)
+		
+		#Matthew Younkins: I've commented out the line below because
+		#I don't know where this waypoint is coming from yet
+		#rospy.Subscriber('/obstacle_waypoint', 	Int32,	self.obstacle_cb)  #ok
+		
+        self.final_waypoints_pub = rospy.Publisher('final_waypoints', Lane, queue_size=1)  
 
-        # TODO: Add a subscriber for /traffic_waypoint and /obstacle_waypoint below
-
-
-        self.final_waypoints_pub = rospy.Publisher('final_waypoints', Lane, queue_size=1)
-
-        # TODO: Add other member variables you need below
+        # Other member variables 
 
         rospy.spin()
 
