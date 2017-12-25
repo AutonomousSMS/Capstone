@@ -61,7 +61,7 @@ class WaypointUpdater(object):
     def current_velocity_cb(self, msg):
         self.current_velocity = msg.twist.linear.x
 
-    def base_waypoints_cb(self, waypoints):
+    def base_waypoints_cb(self, msg):
         self.base_waypoint = msg.data
         
     def traffic_waypoint_cb(self, msg):   #I believe this is actually the red lights
