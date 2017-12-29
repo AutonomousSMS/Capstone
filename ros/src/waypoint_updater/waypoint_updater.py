@@ -22,16 +22,17 @@ as well as to verify your TL classifier.
 '''
 
 LOOKAHEAD_WPS = 200 # Number of waypoints we will publish. You can change this number
+VERBOSE = False
 
 rospy.logwarn("Test")
 class WaypointUpdater(object):
     def __init__(self):
         rospy.init_node('waypoint_updater')
-        rospy.logwarn("Initializing Script")
+        rospy.logwarn('Initializing Script')
         #Available rostopic list (unused subscriptions commented out)
         rospy.Subscriber('/base_waypoints',     Lane,           self.base_waypoints_cb)
         rospy.Subscriber('/current_pose',       PoseStamped,    self.current_pose_cb)  
-        rospy.Subscriber('/current_velocity',   TwistStamped,   self.current_velocity_cb)
+        #rospy.Subscriber('/current_velocity',   TwistStamped,   self.current_velocity_cb)
         #rospy.Subscriber('/image_color',   Lane,       '''needs self.something''')
         #rospy.Subscriber('/rosout'     Lane,       '''needs self.something''')
         #rospy.Subscriber('/rosout_agg,     Lane,       '''needs self.something''')
@@ -46,7 +47,7 @@ class WaypointUpdater(object):
         #rospy.Subscriber('/vehicle/traffic_lights, TrafficLightArray,'''needs self.something''')
         
         #Matthew Younkins: I've commented out the line until I can determine when to use it
-        #rospy.Subscriber('/obstacle_waypoint',     Int32,  self.obstacle_waypoint_cb)  #ok
+        #rospy.Subscriber('/obstacle_waypoint',     Lane,  self.obstacle_waypoint_cb)  #ok
         
         self.final_waypoints_pub = rospy.Publisher('final_waypoints', Lane, queue_size=1)  
         # Other member variables 
@@ -54,37 +55,56 @@ class WaypointUpdater(object):
 
     def current_pose_cb(self, msg):
         self.current_pose = msg.pose
-        #rospy.logwarn("Current Pose Called")
+        self.find_and_publish_final_waypoints()
+        if VERBOSE:
+            rospy.logwarn("Current Pose Called")
+        
+        
     def current_velocity_cb(self, msg):
         self.current_velocity = msg.twist.linear.x
-        #rospy.logwarn("Current Velocity Called")
-    def base_waypoints_cb(self, Lane):
+        if VERBOSE:
+            rospy.logwarn("Current Velocity Called")
+
+
+    def base_waypoints_cb(self, Lane):  #should be OK
         self.base_waypoints = Lane.waypoints
         
-    def traffic_waypoint_cb(self, Int32):
+    def traffic_waypoint_cb(self, msg):
         # These are the red lights 
         self.traffic_waypoint = msg.data
-        rospy.logwarn("Traffic waypoint called")
+        if VERBOSE:
+            rospy.logwarn("Traffic waypoint called")
         
 
     def obstacle_cb(self, msg):
         self.obstacle_waypoint = None
         
+        
     def get_waypoint_velocity(self, waypoint):
         return waypoint.twist.twist.linear.x
 
+        
     def set_waypoint_velocity(self, waypoints, waypoint, velocity):
         waypoints[waypoint].twist.twist.linear.x = velocity
+        
+        
+    def find_and_publish_final_waypoints(self):
+        min_distance = float("inf")
+        closest_point = -1
+        for index, waypoint in enumerate(self.base_waypoints):
+            waypoint_distance = math.sqrt((self.current_pose.position.x-waypoint.pose.pose.position.x)**2+
+                                          (self.current_pose.position.y-waypoint.pose.pose.position.y)**2)
+            if (waypoint_distance < min_distance):
+                min_distance = waypoint_distance
+                closest_point = index
+        rospy.logwarn("closest_point: " + str(closest_point))          
+        lane = Lane()
+        #lane.header.frame_id = "header"
+        lane.header.stamp = rospy.Time(0)
+        lane.waypoints =  self.base_waypoints[closest_point:closest_point+LOOKAHEAD_WPS]
+        self.final_waypoints_pub.publish(lane)
 
-    def distance(self, waypoints, wp1, wp2):
-        dist = 0
-        dl = lambda a, b: math.sqrt((a.x-b.x)**2 + (a.y-b.y)**2  + (a.z-b.z)**2)
-        for i in range(wp1, wp2+1):
-            dist += dl(waypoints[wp1].pose.pose.position, waypoints[i].pose.pose.position)
-            wp1 = i
-        return dist
-
-
+        
 if __name__ == '__main__':
     try:
         WaypointUpdater()
