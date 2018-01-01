@@ -17,29 +17,16 @@ This is the project repo for the final project of the Udacity Self-Driving Car N
   * Use this option to install the SDK on a workstation that already has ROS installed: [One Line SDK Install (binary)](https://bitbucket.org/DataspeedInc/dbw_mkz_ros/src/81e63fcc335d7b64139d7482017d6a97b405e250/ROS_SETUP.md?fileviewer=file-view-default)
 * Download the [Udacity Simulator](https://github.com/udacity/CarND-Capstone/releases).
 
-### Docker Installation
-[Install Docker](https://docs.docker.com/engine/installation/)
-
-Build the docker container
-```bash
-docker build . -t capstone
-```
-
-Run the docker file
-```bash
-docker run -p 4567:4567 -v $PWD:/capstone -v /tmp/log:/root/.ros/ --rm -it capstone
-```
-
 ### Usage
 
 1. Clone the project repository
 ```bash
-git clone https://github.com/MatthewYounkins/CarND-Capstone
+git clone https://github.com/AutonomousSMS/Capstone
 ```
 
 2. Install python dependencies
 ```bash
-cd CarND-Capstone
+cd Capstone
 pip install -r requirements.txt
 ```
 3. Make and run styx
