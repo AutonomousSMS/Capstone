@@ -125,7 +125,7 @@ class TLDetector(object):
             if dist < closest_dist:
                 closest_wp = i
                 closest_dist = dist
-        print (closest_wp)
+        # print (closest_wp)
         return closest_wp
 
     def get_next_waypoint(self, pose, waypoints):
@@ -245,7 +245,7 @@ class TLDetector(object):
 
         if(self.pose):
             car_position = self.get_closest_waypoint(self.pose.pose, self.waypoints.waypoints)
-            print(car_position)
+            # (car_position)
         #TODO find the closest visible traffic light (if one exists)
 
         for stop_light_pos in stop_line_positions:
