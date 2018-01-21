@@ -82,10 +82,16 @@ class DBWNode(object):
         rospy.Subscriber('/twist_cmd', TwistStamped, self.callback_twist_cmd)
         rospy.Subscriber('/current_velocity', TwistStamped, self.callback_current_velocity)
         rospy.Subscriber('/vehicle/dbw_enabled', Bool, self.callback_dbw_enabled)
+        rospy.Subscriber('/final_waypoints', Lane, self.final_waypoints_cb)
         self.loop()
 
+
+    def final_waypoints_cb(self, msg):  #should be OK
+        self.final_waypoints = msg
+        #rospy.logwarn(self.final_waypoints.waypoints[1].twist.twist.linear.x)
+
     def loop(self):
-        rate = rospy.Rate(50) # 50Hz
+        rate = rospy.Rate(20) # 50Hz
         while not rospy.is_shutdown():
             # TODO: Get predicted throttle, brake, and steering using `twist_controller`
             # You should only publish the control commands if dbw is enabled
@@ -98,17 +104,26 @@ class DBWNode(object):
             #   self.publish(throttle, brake, steer)
             if (self.current_command is not None) and (self.current_velocity is not None):
                 #current velocity, target velocity, and target angle and pass into control
+                #rospy.logwarn('Setting Velocity')
                 linear_target  = self.current_command.twist.linear.x
+
+                rospy.logwarn(str(linear_target) )
                 angular_target = self.current_command.twist.angular.z
                 linear_current = self.current_velocity.twist.linear.x
                 angular_current = self.current_velocity.twist.angular.z
 
                 throttle, brake, steering = self.controller.control(linear_target, angular_target, linear_current)
-
+                #rospy.logwarn(str(throttle))
+                brake = brake * 500
+                rospy.logwarn(str(brake))
+                
+                
                 # publish the control commands if dbw is enabled
                 if self.dbw_enabled is True:
+
                     self.publish(throttle, brake, steering)
                 else:
+                    rospy.logwarn('resetting controller')
                     self.controller.reset()
             rate.sleep()
 
