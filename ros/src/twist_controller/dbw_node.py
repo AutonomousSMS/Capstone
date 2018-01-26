@@ -88,6 +88,8 @@ class DBWNode(object):
 
     def final_waypoints_cb(self, msg):  #should be OK
         self.final_waypoints = msg
+        #rospy.logwarn(self.final_waypoints)
+        #rospy.logwarn('dbw_node ' + str(self.final_waypoints.waypoints[1].twist.twist.linear.z))
         #rospy.logwarn(self.final_waypoints.waypoints[1].twist.twist.linear.x)
 
     def loop(self):
@@ -107,7 +109,7 @@ class DBWNode(object):
                 #rospy.logwarn('Setting Velocity')
                 linear_target  = self.current_command.twist.linear.x
 
-                rospy.logwarn(str(linear_target) )
+                #rospy.logwarn(str(linear_target) )
                 angular_target = self.current_command.twist.angular.z
                 linear_current = self.current_velocity.twist.linear.x
                 angular_current = self.current_velocity.twist.angular.z
@@ -115,7 +117,7 @@ class DBWNode(object):
                 throttle, brake, steering = self.controller.control(linear_target, angular_target, linear_current)
                 #rospy.logwarn(str(throttle))
                 brake = brake * 500
-                rospy.logwarn(str(brake))
+                #rospy.logwarn(str(brake))
                 
                 
                 # publish the control commands if dbw is enabled
@@ -154,6 +156,8 @@ class DBWNode(object):
 
     def callback_dbw_enabled(self, msg):
         self.dbw_enabled = msg.data
+
+
 
 
 if __name__ == '__main__':
