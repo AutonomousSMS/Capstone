@@ -15,9 +15,8 @@ import math
 
 STATE_COUNT_THRESHOLD = 3
 
-
-###########################################################
-# I made changes to this file but there is no way to check the accuracy.
+TOO_VERBOSE = False
+VERBOSE = True
 
 
 class TLDetector(object):
@@ -41,7 +40,11 @@ class TLDetector(object):
         rely on the position of the light and the camera image to predict it.
         '''
         sub3 = rospy.Subscriber('/vehicle/traffic_lights', TrafficLightArray, self.traffic_cb)
+        
+        #rospy.logwarn(sub3)
         sub6 = rospy.Subscriber('/image_color', Image, self.image_cb)
+        sub7 = rospy.Subscriber('/final_waypoints', Lane, self.final_waypoints_cb)
+        sub8 = rospy.Subscriber('/closest_waypoint' ,Int32, self.closest_waypoint_cb)
 
         config_string = rospy.get_param("/traffic_light_config")
         self.config = yaml.load(config_string)
@@ -59,14 +62,74 @@ class TLDetector(object):
 
         rospy.spin()
 
+    def final_waypoints_cb(self, msg):  #should be OK
+        self.final_waypoints = msg
+
+        if VERBOSE:
+            #rospy.logwarn(self.final_waypoints)
+            #rospy.logwarn('tl_detect ' + str(self.final_waypoints.waypoints[1].twist.twist.linear.z))
+            #rospy.logwarn(self.final_waypoints.waypoints[1].twist.twist.linear.x)
+
+            #Pose is the location.  1 is the closest waypoint published by waypoint_updater
+            xLoc = self.final_waypoints.waypoints[1].pose.pose.position.x
+            yLoc = self.final_waypoints.waypoints[1].pose.pose.position.y
+            zLoc = self.final_waypoints.waypoints[1].pose.pose.position.z
+            rospy.logwarn('Pose:  ' + str(xLoc) + ' ' + str(yLoc)+ ' ' + str(zLoc))
+
+            #Twist is desired velocity
+            xLoc = self.final_waypoints.waypoints[1].twist.twist.linear.x
+            yLoc = self.final_waypoints.waypoints[1].twist.twist.linear.y
+            zLoc = self.final_waypoints.waypoints[1].twist.twist.linear.z
+            rospy.logwarn('Twist: ' + str(xLoc) + ' ' + str(yLoc)+ ' ' + str(zLoc))
+
+
     def pose_cb(self, msg):
         self.pose = msg
 
     def waypoints_cb(self, waypoints):
         self.waypoints = waypoints
 
+        
+
+    def closest_waypoint_cb(self, msg):
+        self.closest_waypoint = msg
+        
+
+
+
     def traffic_cb(self, msg):
         self.lights = msg.lights
+        closest_light_distance_sq = float("inf")
+        closest_light = -1
+        for index, light in enumerate(self.lights):
+
+            if TOO_VERBOSE:
+                #rospy.logwarn(self.lights[index].pose.pose.position.x)
+                xLoc = self.lights[index].pose.pose.position.x
+                yLoc = self.lights[index].pose.pose.position.y
+                rospy.logwarn(str(index) + ': ' + str(xLoc) + ' ' + str(yLoc))
+
+
+            light_distance_sq = ((self.final_waypoints.waypoints[1].pose.pose.position.x-
+                                        self.lights[index].pose.pose.position.x)**2+
+                                (self.final_waypoints.waypoints[1].pose.pose.position.y-
+                                        self.lights[index].pose.pose.position.y)**2)
+
+        
+            if (light_distance_sq < closest_light_distance_sq):
+                closest_light_distance_sq = light_distance_sq
+                closest_light = index
+        if VERBOSE:
+            rospy.logwarn('Closest Light Index: ' + str(closest_light))
+        #        
+        #    if (traffic_light_index is not None) and (traffic_distance < BRAKING_DISTANCE_START):
+        #        a = 1
+        #        vel = self.current_velocity
+        #        #rospy.logwarn('braking')
+        #        #rospy.logwarn(current_velocity)
+        #        #distance_between_waypoints = ???
+        #        waypoints[index].twist.twist.linear.x = 0
+                
 
     def image_cb(self, msg):
         """Identifies red lights in the incoming camera image and publishes the index
@@ -94,8 +157,10 @@ class TLDetector(object):
             light_wp = light_wp if state == TrafficLight.RED else -1
             self.last_wp = light_wp
             self.upcoming_red_light_pub.publish(Int32(light_wp))
+            rospy.logwarn('Red Light Detected A:' + str(light_wp))
         else:
             self.upcoming_red_light_pub.publish(Int32(self.last_wp))
+            rospy.logwarn('Red Light Detected B:' + str(light_wp))
         self.state_count += 1
 
    
@@ -103,37 +168,11 @@ class TLDetector(object):
         return math.sqrt((x2-x1)**2 + (y2-y1)**2)
 
 
-    def get_closest_waypoint(self, pose, waypoints):
-        """Identifies the closest path waypoint to the given position
-            https://en.wikipedia.org/wiki/Closest_pair_of_points_problem
-        Args:
-            pose (Pose): position to match a waypoint to
-
-        Returns:
-            int: index of the closest waypoint in self.waypoints
-
-        """
-
-        closest_dist = float('inf')
-        closest_wp = 0
-
-        for i in range(len(waypoints)):
-            dist = self.distance(pose.position.x, pose.position.y,
-                                 waypoints[i].pose.pose.position.x,
-                                 waypoints[i].pose.pose.position.y)
-
-            if dist < closest_dist:
-                closest_wp = i
-                closest_dist = dist
-        # print (closest_wp)
-        return closest_wp
-
     def get_next_waypoint(self, pose, waypoints):
         """this gives the closest waypoint in the car's heading direction"""
-
-        closest_wp = self.get_closest_waypoint(pose, waypoints)
-        wp_x = waypoints[closest_wp].pose.pose.position.x
-        wp_y = waypoints[closest_wp].pose.pose.position.y
+        rospy.logwarn(self.closest_waypoint.data)
+        wp_x = waypoints[self.closest_waypoint.data].pose.pose.position.x
+        wp_y = waypoints[self.closest_waypoint.data].pose.pose.position.y
         heading_dir = math.atan2((wp_y - pose.position.y), (wp_x - pose.position.x ))
         angle = abs(pose.position.z - heading_dir)
         if angle > math.pi / 4.0:
